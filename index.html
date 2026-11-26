@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#071226" />
+  <meta name="description" content="ARD — free online video and media tools." />
+  <title>ARD — Free Media Tools</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="ARD home"><span class="brand-mark">A<span>R</span>D</span><small>FREE MEDIA TOOLS</small></a>
+    <nav><a href="#tools">Tools</a><a href="#about">About</a></nav>
+    <a class="top-cta" href="#cutter">Start editing <span>↗</span></a>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-word" aria-hidden="true">ARD</div>
+      <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div>
+      <div class="hero-content">
+        <div class="eyebrow"><i></i> YOUR CREATIVE TOOLKIT</div>
+        <h1>Make your media<br/><span>move.</span></h1>
+        <p>Simple, free tools to cut, convert and prepare your videos — right in your browser.</p>
+        <a class="primary-btn" href="#cutter">Try video cutter <b>→</b></a>
+        <div class="hero-note"><span class="pulse-dot"></span> No account. No subscription. Free to use.</div>
+      </div>
+      <div class="hero-chip chip-one">✂ &nbsp; VIDEO CUTTER</div>
+      <div class="hero-chip chip-two">◈ &nbsp; CREATIVE TOOLS</div>
+    </section>
+
+    <section class="tools-section" id="tools">
+      <div class="section-heading"><div><div class="eyebrow">THE TOOLBOX</div><h2>Everything starts here.</h2></div><span class="section-count">01 / TOOLS</span></div>
+      <div class="tool-grid">
+        <a class="tool-card featured" href="#cutter"><div class="tool-icon">✂</div><span class="tool-tag">AVAILABLE NOW</span><h3>Video Cutter</h3><p>Choose start and end times, preview your clip and export it.</p><span class="card-arrow">Open tool ↗</span></a>
+        <div class="tool-card"><div class="tool-icon">▣</div><span class="tool-tag soon">COMING NEXT</span><h3>Video Compressor</h3><p>Make large video files smaller for sharing.</p></div>
+        <div class="tool-card"><div class="tool-icon">♫</div><span class="tool-tag soon">COMING NEXT</span><h3>Video to MP3</h3><p>Extract audio from a video file.</p></div>
+        <div class="tool-card"><div class="tool-icon">CC</div><span class="tool-tag soon">COMING NEXT</span><h3>Subtitle Tools</h3><p>Create and edit SRT subtitle files.</p></div>
+        <div class="tool-card"><div class="tool-icon">▤</div><span class="tool-tag soon">COMING NEXT</span><h3>Video Merger</h3><p>Join video clips into one file.</p></div>
+        <div class="tool-card"><div class="tool-icon">▧</div><span class="tool-tag soon">COMING NEXT</span><h3>Thumbnail Maker</h3><p>Create a cover image for your video.</p></div>
+      </div>
+    </section>
+
+    <section class="cutter-section" id="cutter">
+      <div class="section-heading"><div><div class="eyebrow">AVAILABLE NOW</div><h2>Video cutter</h2><p class="section-sub">Trim a video by entering the exact start and end time.</p></div><span class="section-count">02 / EDITOR</span></div>
+      <div class="editor-card">
+        <div class="editor-top"><div><strong>New project</strong><small>Your video stays on your device while you select it.</small></div><span class="local-badge">● LOCAL FILE</span></div>
+        <label class="dropzone" for="videoFile"><span class="upload-icon">↑</span><strong>Choose a video from your device</strong><small>MP4, MOV, WebM and other browser-supported formats</small><span class="browse-btn">Browse video</span><input id="videoFile" type="file" accept="video/*" /></label>
+        <div class="url-row"><input id="videoUrl" type="url" placeholder="Or paste a direct video URL (MP4, WebM)…"/><button id="loadUrl" class="secondary-btn">Load link</button></div>
+        <div id="videoArea" class="video-area hidden"><video id="preview" controls playsinline></video><div class="video-meta" id="videoMeta"></div></div>
+        <div class="time-grid"><label>Start time <input id="startTime" value="00:00:00" inputmode="numeric" placeholder="HH:MM:SS"/></label><label>End time <input id="endTime" value="00:00:05" inputmode="numeric" placeholder="HH:MM:SS"/></label></div>
+        <div class="editor-actions"><button id="cutBtn" class="primary-btn" disabled>Cut video <b>→</b></button><span id="status" role="status">Choose a video to begin.</span></div>
+        <div id="downloadArea" class="download-area hidden"><strong>Your clip is ready.</strong><a id="downloadLink" class="primary-btn" download="ard-clip.mp4">Download MP4 ↓</a></div>
+        <p class="fine-print">Note: Large videos may exceed your phone's available memory. Direct links must allow browser access (CORS); social media page links are not direct video files.</p>
+      </div>
+    </section>
+
+    <section class="about-section" id="about"><div class="eyebrow">ABOUT ARD</div><h2>Creative tools, made simple.</h2><p>ARD is a free collection of practical media tools designed to work on phones and computers. More tools will be added over time.</p></section>
+  </main>
+  <footer><a class="footer-brand" href="#home">ARD</a><span>© 2026 ARD · Free media tools</span><a href="#home">Back to top ↑</a></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
