@@ -2,6 +2,7 @@
 import { FFmpeg } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
 import { toBlobURL } from 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js';
 
+// ARD ELEMENTS
 const fileInput = document.querySelector('#videoFile');
 const video = document.querySelector('#preview');
 const videoArea = document.querySelector('#videoArea');
@@ -12,7 +13,10 @@ const downloadArea = document.querySelector('#downloadArea');
 const downloadLink = document.querySelector('#downloadLink');
 const startInput = document.querySelector('#startTime');
 const endInput = document.querySelector('#endTime');
+const loadUrlBtn = document.querySelector('#loadUrl');
+const videoUrlInput = document.querySelector('#videoUrl');
 
+// STATE
 let sourceFile = null;
 let sourceRemoteUrl = null;
 let sourceUrl = null;
@@ -21,10 +25,12 @@ let ffmpeg = null;
 let ffmpegLoading = null;
 let lastFFmpegError = '';
 
+// STATUS
 function setStatus(message) {
-  status.textContent = message;
+  if (status) status.textContent = message;
 }
 
+// TIME FORMAT
 function parseTime(value) {
   const parts = value.trim().split(':').map(Number);
 
@@ -38,8 +44,9 @@ function parseTime(value) {
   return parts[0] * 3600 + parts[1] * 60 + parts[2];
 }
 
+// SHOW VIDEO
 function showVideo(url, name, sizeText = '') {
-  if (sourceUrl?.startsWith('blob:')) {
+  if (sourceUrl && sourceUrl.startsWith('blob:')) {
     URL.revokeObjectURL(sourceUrl);
   }
 
@@ -53,20 +60,21 @@ function showVideo(url, name, sizeText = '') {
   downloadArea.classList.add('hidden');
   cutBtn.disabled = false;
 
-  setStatus('Video loaded successfully.');
+  setStatus('Video loaded. Enter start and end times.');
 }
 
+// UPLOAD VIDEO
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0];
 
   if (!file) return;
 
-  const isVideo =
+  const validVideo =
     file.type.startsWith('video/') ||
     /\.(mp4|mov|webm|mkv|avi)$/i.test(file.name);
 
-  if (!isVideo) {
-    setStatus('Please choose a valid video file.');
+  if (!validVideo) {
+    setStatus('Please select a valid video file.');
     return;
   }
 
@@ -82,8 +90,9 @@ fileInput.addEventListener('change', () => {
   );
 });
 
-document.querySelector('#loadUrl').addEventListener('click', () => {
-  const url = document.querySelector('#videoUrl').value.trim();
+// LOAD DIRECT VIDEO URL
+loadUrlBtn.addEventListener('click', () => {
+  const url = videoUrlInput.value.trim();
 
   if (!url) {
     setStatus('Paste a direct video URL first.');
@@ -103,10 +112,11 @@ document.querySelector('#loadUrl').addEventListener('click', () => {
   showVideo(url, 'Video from link');
 
   video.onerror = () => {
-    setStatus('Could not load link. The website may block browser access (CORS).');
+    setStatus('Could not load this link. The host may block CORS.');
   };
 });
 
+// LOAD FFMPEG ENGINE
 async function getFFmpeg() {
   if (ffmpeg) return ffmpeg;
   if (ffmpegLoading) return ffmpegLoading;
@@ -115,9 +125,12 @@ async function getFFmpeg() {
     const instance = new FFmpeg();
 
     instance.on('log', ({ message }) => {
-      if (message && /error|failed|not found/i.test(message)) {
-        lastFFmpegError = message;
-        console.error('FFmpeg:', message);
+      if (message) {
+        console.log('ARD FFmpeg:', message);
+
+        if (/error|failed/i.test(message)) {
+          lastFFmpegError = message;
+        }
       }
     });
 
@@ -132,13 +145,22 @@ async function getFFmpeg() {
     const base =
       'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
 
-    setStatus('Loading video engine...');
+    // IMPORTANT:
+    // Load FFmpeg's main worker from the ARD website itself.
+    // This avoids the cross-origin Worker error.
+    const localWorkerURL =
+      `${window.location.origin}/ffmpeg/worker.js`;
+
+    setStatus('Loading ARD video engine...');
 
     await instance.load({
+      classWorkerURL: localWorkerURL,
+
       coreURL: await toBlobURL(
         `${base}/ffmpeg-core.js`,
         'text/javascript'
       ),
+
       wasmURL: await toBlobURL(
         `${base}/ffmpeg-core.wasm`,
         'application/wasm'
@@ -146,6 +168,7 @@ async function getFFmpeg() {
     });
 
     ffmpeg = instance;
+
     return instance;
   })();
 
@@ -156,12 +179,17 @@ async function getFFmpeg() {
   }
 }
 
+// CUT VIDEO
 cutBtn.addEventListener('click', async () => {
   const start = parseTime(startInput.value);
   const end = parseTime(endInput.value);
 
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
-    setStatus('Invalid time. Use HH:MM:SS and make end later than start.');
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    end <= start
+  ) {
+    setStatus('Use HH:MM:SS. End time must be later than start.');
     return;
   }
 
@@ -171,7 +199,7 @@ cutBtn.addEventListener('click', async () => {
   }
 
   if (!Number.isFinite(video.duration)) {
-    setStatus('Please wait until the video has loaded.');
+    setStatus('Please wait for the video to load.');
     return;
   }
 
@@ -183,13 +211,14 @@ cutBtn.addEventListener('click', async () => {
   cutBtn.disabled = true;
   downloadArea.classList.add('hidden');
 
-  let engine;
-  let inputName;
-  const outputName = `ard-cut-${Date.now()}.mp4`;
+  let engine = null;
+  let inputName = null;
+  const outputName = `ard-output-${Date.now()}.mp4`;
 
   try {
+    // FETCH DIRECT VIDEO LINK
     if (!sourceFile && sourceRemoteUrl) {
-      setStatus('Downloading video from link...');
+      setStatus('Downloading video link...');
 
       const response = await fetch(sourceRemoteUrl);
 
@@ -200,7 +229,7 @@ cutBtn.addEventListener('click', async () => {
       const blob = await response.blob();
 
       if (!blob.size) {
-        throw new Error('The video file is empty.');
+        throw new Error('Downloaded video is empty.');
       }
 
       sourceFile = new File(
@@ -210,25 +239,29 @@ cutBtn.addEventListener('click', async () => {
       );
     }
 
+    // LOAD ENGINE
     engine = await getFFmpeg();
 
     lastFFmpegError = '';
 
     const extension =
-      sourceFile.name.split('.').pop().toLowerCase()
+      sourceFile.name.split('.').pop()
+        .toLowerCase()
         .replace(/[^a-z0-9]/g, '') || 'mp4';
 
     inputName = `ard-input-${Date.now()}.${extension}`;
 
+    // WRITE VIDEO FILE
     setStatus('Preparing video...');
 
-    const fileData = new Uint8Array(
+    const inputData = new Uint8Array(
       await sourceFile.arrayBuffer()
     );
 
-    await engine.writeFile(inputName, fileData);
+    await engine.writeFile(inputName, inputData);
 
-    setStatus('Cutting your video...');
+    // CUT VIDEO
+    setStatus('Cutting video...');
 
     const exitCode = await engine.exec([
       '-ss', String(start),
@@ -249,16 +282,18 @@ cutBtn.addEventListener('click', async () => {
 
     if (exitCode !== 0) {
       throw new Error(
-        lastFFmpegError || `FFmpeg exit code: ${exitCode}`
+        lastFFmpegError ||
+        `FFmpeg failed. Exit code: ${exitCode}`
       );
     }
 
-    setStatus('Preparing your download...');
+    // READ OUTPUT
+    setStatus('Preparing download...');
 
     const data = await engine.readFile(outputName);
 
     if (!data || data.length === 0) {
-      throw new Error('The output video is empty.');
+      throw new Error('Output video is empty.');
     }
 
     const blob = new Blob(
@@ -272,32 +307,36 @@ cutBtn.addEventListener('click', async () => {
 
     outputUrl = URL.createObjectURL(blob);
 
+    // DOWNLOAD
     downloadLink.href = outputUrl;
     downloadLink.download = 'ARD-Cut-Video.mp4';
 
     downloadArea.classList.remove('hidden');
 
-    setStatus('Success! Your MP4 video is ready.');
+    setStatus('Success! Your video is ready to download.');
 
   } catch (error) {
-    console.error('ARD Video Cutter Error:', error);
+    console.error('ARD VIDEO CUTTER ERROR:', error);
 
     setStatus(
       `Processing failed: ${error?.message || String(error)}`
     );
 
   } finally {
+    // CLEAN TEMPORARY FILES
     if (engine) {
-      try {
-        if (inputName) await engine.deleteFile(inputName);
-      } catch (e) {
-        console.warn('Input cleanup:', e);
+      if (inputName) {
+        try {
+          await engine.deleteFile(inputName);
+        } catch (error) {
+          console.warn('Input cleanup failed:', error);
+        }
       }
 
       try {
         await engine.deleteFile(outputName);
-      } catch (e) {
-        console.warn('Output cleanup:', e);
+      } catch (error) {
+        console.warn('Output cleanup failed:', error);
       }
     }
 
@@ -305,6 +344,7 @@ cutBtn.addEventListener('click', async () => {
   }
 });
 
+// CLEAN MEMORY
 window.addEventListener('beforeunload', () => {
   if (sourceUrl?.startsWith('blob:')) {
     URL.revokeObjectURL(sourceUrl);
@@ -314,4 +354,4 @@ window.addEventListener('beforeunload', () => {
     URL.revokeObjectURL(outputUrl);
   }
 });
-      
+        
